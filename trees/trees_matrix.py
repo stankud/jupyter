@@ -119,6 +119,51 @@ class Matrix():
 
         print('Distribution DONE')
 
+    def find_most_neighbors(self):
+        max_neighbors = 0
+        max_points = []
+
+        for idx1, lat_zone in enumerate(matrix.matrix):
+            for idx2, zone in enumerate(lat_zone.zones):
+                points = zone.points
+                print(f"""
+                    LatZones: {idx1}
+                    Zone: {idx2}
+                    Point Count: {len(points)}
+                """)
+                for idx3, p1 in enumerate(points):
+                    points_len = len(points)
+                    neighboors = 0
+                    right = left = idx3
+
+                    while right < points_len and abs(p1['long'] - points[right]['long']) <= LONG_THRESHOLD:
+                        right += 1
+                    while left > 0 and abs(p1['lat'] - points[left]['long']) <= LONG_THRESHOLD:
+                        left -= 1
+
+                    selected_points = right - left
+
+                    if selected_points >= max_neighbors:
+
+                        for p2 in points[left:right+1]:
+                            if p1['id'] == p2['id']:
+                                continue
+
+                            if haversine(p1, p2) < RADIUS_FT:
+                                neighboors += 1
+
+                        if neighboors > 0:
+                            if neighboors > max_neighbors:
+                                max_points = [p1]
+                                max_neighbors = neighboors
+                            elif neighboors == max_neighbors:
+                                max_points.append(p1)
+
+        print(f"""
+            Points: {max_points}
+            Neighboors count: {max_neighbors}
+        """)
+
 class LatZones():
     def __init__(self, bottom_lat, top_lat):
         self.bottom_lat = bottom_lat
@@ -148,50 +193,7 @@ class Zone():
             {self.right_long}
         """
 
-matrix = Matrix(bottom_lat, top_lat, left_long, right_long)
-matrix.distribute_points(sorted_long)
-
-
-max_neighbors = 0
-max_points = []
-
-for idx1, lat_zone in enumerate(matrix.matrix):
-    for idx2, zone in enumerate(lat_zone.zones):
-        points = zone.points
-        print(f"""
-            LatZones: {idx1}
-            Zone: {idx2}
-            Point Count: {len(points)}
-        """)
-        for idx3, p1 in enumerate(points):
-            points_len = len(points)
-            neighboors = 0
-            right = left = idx3
-
-            while right < points_len and abs(p1['long'] - points[right]['long']) <= LONG_THRESHOLD:
-                right += 1
-            while left > 0 and abs(p1['lat'] - points[left]['long']) <= LONG_THRESHOLD:
-                left -= 1
-
-            selected_points = right - left
-
-            if selected_points >= max_neighbors:
-
-                for p2 in points[left:right+1]:
-                    if p1['id'] == p2['id']:
-                        continue
-
-                    if haversine(p1, p2) < RADIUS_FT:
-                        neighboors += 1
-
-                if neighboors > 0:
-                    if neighboors > max_neighbors:
-                        max_points = [p1]
-                        max_neighbors = neighboors
-                    elif neighboors == max_neighbors:
-                        max_points.append(p1)
-
-print(f"""
-    Points: {max_points}
-    Neighboors count: {max_neighbors}
-""")
+if __name__ == "__main__":
+    matrix = Matrix(bottom_lat, top_lat, left_long, right_long)
+    matrix.distribute_points(sorted_long)
+    matrix.find_most_neighbors()
